@@ -88,5 +88,23 @@ server {
 
 
 
+其中
+
+```
+proxy_set_header    X-Forwarded-Ssl     off;
+```
+
+这个把https关掉
+
+
+关掉https还要把 `/etc/nginx/conf.d/https.conf` 配置中后边两行注释掉
+
+```
+root@center1:~# cat /etc/nginx/conf.d/https.conf
+ssl_session_cache shared:SSL:10m;
+ssl_session_timeout 10m;
+#ssl_certificate /etc/ssl/private/chained.crt;
+#ssl_certificate_key /etc/ssl/private/server.key;
+```
 
 
