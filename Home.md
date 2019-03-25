@@ -1,8 +1,6 @@
 # Ruby & Rails 
 
 - [ActiveRecord’s queries tricks 小记](ActiveRecord-queries-tricks)
-
-## Gem
 - [Faraday Gem notes](Faraday-Gem-notes)
 
 # ops
