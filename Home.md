@@ -1,3 +1,3 @@
 # hello world
 
-[Faraday gem](Faraday-gem)
+[Faraday Gem notes](Faraday-gem)
