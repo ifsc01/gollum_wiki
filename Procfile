@@ -1,1 +1,1 @@
-web: bundle exec puma
+gollum: bundle exec puma
