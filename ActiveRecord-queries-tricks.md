@@ -30,7 +30,7 @@ https://api.rubyonrails.org/classes/ActiveRecord/SpawnMethods.html
 * **Profile has_many Skills**
 
 
-```
+```ruby
 User.joins(:profiles).merge(Profile.joins(:skills))
 => SELECT users.* FROM users 
    INNER JOIN profiles    ON profiles.user_id  = users.id
@@ -50,7 +50,7 @@ User.joins(profiles: :skills)
 
 存在和不存在
 
-```
+```ruby
 # Post
 scope :famous, ->{ where("view_count > ?", 1_000) }
 # User
@@ -71,14 +71,15 @@ end
 
 不好的做法
 
-```
+```ruby
 Post.where(user_id: User.created_last_month.pluck(:id))
 ```
 
 这里的缺陷是将运行两个SQL查询：一个用于获取用户的ID，另一个用于从这些user_id获取帖子
 
 这样写一个查询就可以了
-```
+
+```ruby
 Post.where(user_id: User.created_last_month)
 ```
 
