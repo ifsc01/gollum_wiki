@@ -1,5 +1,11 @@
 # deploy gollum	 
 
+## tools
+
+* foreman
+* systemd 
+
+
 ```bash
 sudo apt-get install make build-essential ruby ruby-dev libicu-dev
 ```
