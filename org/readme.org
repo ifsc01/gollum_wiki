@@ -1,0 +1,32 @@
+#+options: html-style:nil
+#+options: num:nil
+
+#+title: Index Page
+
+* org wiki 
+
+- [[file:golang-gb.org][使用 gb 构建 go project]] 
+- [[file:jwt.org][jwt - json web token]]  <2018-04-11 wed>
+- [[file:machine-learning.org][machine learning recipes note]] <2018-04-08 sun>
+- [[file:journalctl-note.org][systemd journalctl 查询日志]] <2018-04-09 mon>
+
+** elixir
+
+- [[file:deploy-elixir-project-to-heroku.org][在heroku上部署elixir非phoenix项目]] <2018-04-16 mon> 
+- [[file:elixir-with.org][elixir with 使用]] <2018-04-05 thu>
+- [[file:phoenix-deploy.org][phoenix 部署记]] <2018-04-05 thu>
+- [[file:umbrella.org][umbrella projects]] <2018-04-12 thu>
+- [[file:guardian.org][elixir 认证库 guardian 纪录]]
+- [[file:elixir-protocols-vs-behaviours.org][elixir protocols vs behaviours]]
+
+*** elixir in action 笔记
+
+    - [[file:6-generic-server-processes.org][6 Generic server processes]]
+    - [[file:7-Building-a-concurrent-system.org][7 Building a concurrent system]]
+    - [[file:elixir-in-action-second-edition-chapter-8-fault-tolerance.org][8 Fault-tolerance basics]]
+    - [[file:11-Working-with-components.org][11 Working with components]]
+
+      
+** Golang
+
+- [[file:golang-flag-package.org][golang flag package notes]]

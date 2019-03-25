@@ -1,0 +1,35 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: Elixir Protocols vs Behaviours 
+
+* Protocols & Behaviours 不同
+
+#+BEGIN_QUOTE
+A protocol is indeed a behaviour + dispatching logic.
+
+However I think you are missing the point of behaviours. Behaviours are extremely useful. For example, a GenServer defines a behaviour. A behaviour is a way to say: give me a module as argument and I will invoke the following callbacks on it, which these argument and so on. A more complex example for behaviours besides a GenServer are the Ecto adapters.
+
+However, this does not work if you have a data structure and you want to dispatch based on the data structure. Hence protocols.
+
+by José Valim
+#+END_QUOTE
+
+
+Behaviours 的例子是 GenServer, 一个 GenServer 实现了不同的callback 供调用, Behaviours 描述了module需要提供哪些函数
+
+Protocols 是基于类型/数据的多态, 比如 ~Enum.each(foo, ...)~ 具体怎么迭代由 ~foo~ 的类型决定
+
+其它
+
+- Behaviours 是由 erlang 提供的机制
+- Protocols 是Elixir 新加的机制
+
+
+
+* links
+
+- [[https://stackoverflow.com/questions/26215206/difference-between-protocol-behaviour-in-elixir][Difference between protocol & behaviour in elixir - Stack Overflow]]
+- [[https://groups.google.com/forum/#!msg/elixir-lang-talk/S0NlOoc4ThM/J2aD2hKrtuoJ][Trying to understand Protocols vs Behaviours - Google 网上论坛]]
+- [[https://www.djm.org.uk/posts/elixir-behaviours-vs-protocols-what-is-the-difference/][Elixir's Behaviours vs Protocols]]
+- [[http://samueldavies.net/2017/04/19/polymorphism-in-elixir-protocols-vs-behaviours/][Polymorphism in Elixir: Protocols vs. Behaviours · Sam Davies]]
+

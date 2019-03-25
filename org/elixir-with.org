@@ -1,0 +1,122 @@
+#+OPTIONS: html-style:nil
+#+TITLE: Elixir with 笔记
+
+** TLDR
+
+简单的说
+
+#+BEGIN_SRC elixir
+defp serve(socket) do
+  msg =
+    case read_line(socket) do
+      {:ok, data} ->
+        case KVServer.Command.parse(data) do
+          {:ok, command} ->
+            KVServer.Command.run(command)
+          {:error, _} = err ->
+            err
+        end
+      {:error, _} = err ->
+        err
+    end
+
+  write_line(socket, msg)
+  serve(socket)
+end
+#+END_SRC
+
+像这种代码使用 ~with~ 可以重构成下面的形式，来避免 ~case~ 嵌套
+
+#+BEGIN_SRC elixir
+defp serve(socket) do
+  msg =
+    with {:ok, data} <- read_line(socket),
+         {:ok, command} <- KVServer.Command.parse(data),
+         do: KVServer.Command.run(command)
+
+  write_line(socket, msg)
+  serve(socket)
+end
+#+END_SRC
+
+代码来自 https://elixir-lang.org/getting-started/mix-otp/docs-tests-and-with.html#with 
+
+
+~with~ 接收 ~<-~ 右边的值，进行模式匹配，如果匹配成功，则继续下一个表达式，直到所有的匹配成功执行 ~do~ 代码块,否则中止返回不匹配的值
+
+** syntax
+
+doc: https://hexdocs.pm/elixir/Kernel.SpecialForms.html#with/1
+
+ #+BEGIN_SRC elixir
+iex> opts = %{width: 10, height: 15}
+iex> with {:ok, width} <- Map.fetch(opts, :width),
+...>      {:ok, height} <- Map.fetch(opts, :height),
+...>      do: {:ok, width * height}
+{:ok, 150}
+ #+END_SRC
+
+所有区配都成功 返回 ~{:ok, 150}~
+
+
+#+BEGIN_SRC elixir
+iex> opts = %{width: 10}
+iex> with {:ok, width} <- Map.fetch(opts, :width),
+...>      {:ok, height} <- Map.fetch(opts, :height),
+...>      do: {:ok, width * height}
+:error
+#+END_SRC
+
+在 ~{:ok, height} <- Map.fetch(opts, :height)~ 失败, 返回 ~Map.fetch(opts, :height)~ 的返回值 ~:error~
+
+
+支持 ~when~ 
+
+#+BEGIN_SRC elixir
+iex> users = %{"melany" => "guest", "bob" => :admin}
+iex> with {:ok, role} when not is_binary(role) <- Map.fetch(users, "bob"),
+...>      do: {:ok, to_string(role)}
+{:ok, "admin"}
+#+END_SRC
+
+
+
+~with~ 里的变量只在 ~with~ 下生效
+
+#+BEGIN_SRC elixir
+iex> width = nil
+iex> opts = %{width: 10, height: 15}
+iex> with {:ok, width} <- Map.fetch(opts, :width),
+...>      double_width = width * 2,
+...>      {:ok, height} <- Map.fetch(opts, :height),
+...>      do: {:ok, double_width * height}
+{:ok, 300}
+iex> width
+nil
+#+END_SRC
+
+~width~ 最后还是 ~nil~
+
+
+可以加 ~else~ 处理匹配中止的情况
+
+#+BEGIN_SRC elixir
+iex> opts = %{width: 10}
+iex> with {:ok, width} <- Map.fetch(opts, :width),
+...>      {:ok, height} <- Map.fetch(opts, :height) do
+...>   {:ok, width * height}
+...> else
+...>   :error ->
+...>     {:error, :wrong_data}
+...> end
+{:error, :wrong_data}
+#+END_SRC
+
+ 如果 ~else~ 不匹配，抛出 [[https://hexdocs.pm/elixir/WithClauseError.html][WithClauseError]] 异常
+
+** links 
+
+- [[https://hexdocs.pm/elixir/Kernel.SpecialForms.html#with/1][Kernel.SpecialForms – Elixir v1.6.4]]
+- [[http://learningelixir.joekain.com/learning-elixir-with/][Learning Elixir's with – Learning Elixir]]
+- [[http://openmymind.net/Elixirs-With-Statement/][Elixir's With Statement]]
+- [[https://gist.github.com/josevalim/8130b19eb62706e1ab37][introducing_with.md]]
