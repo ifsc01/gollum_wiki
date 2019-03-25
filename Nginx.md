@@ -1,4 +1,4 @@
-# conf example 
+## conf example 
 
 gollum config
 
