@@ -1,3 +1,3 @@
-# hello world
+## Ruby & Rails 
 
-[Faraday Gem notes](Faraday-gem)
+- [Faraday Gem notes](Faraday-gem)
