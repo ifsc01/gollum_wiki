@@ -13,7 +13,7 @@ scope :activated, ->{
 
 更好的做法 
 
-```
+```ruby
 # Profile model
 scope :activated, ->{ where(activated: true) }
 # User model
