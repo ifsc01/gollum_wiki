@@ -1,0 +1,122 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: Umbrella Projects
+
+* tldr
+
+用于处理大项目
+
+mix管理依赖，依赖有两种
+
+ - 外部依赖 类似 ~plug~
+ - 内部依赖 公司内部私有的项目
+ 
+内部依赖可以使用 私有的git库 比如在mix里
+
+#+BEGIN_SRC elixir
+def deps do
+  [{:kv, git: "https://github.com/YOUR_ACCOUNT/kv.git"}]
+end
+#+END_SRC
+
+如果把一个大项目分成一个个的私有项目, 维护众多的git库会更加麻烦
+
+Elixir 提供了更好的方案 ~umbrella~, 可以在一个项目下创建子项目, 在一个单独的git库里
+
+~umbrella~ 项目结构, ~apps~ 目录下有多个子项目
+
+#+BEGIN_SRC elixir
++ kv_umbrella
+  + apps
+    + kv
+    + kv_server
+#+END_SRC
+
+Mix 可以统一处理这些项目，也可以每个项目单独构建等
+
+创建 ~umbrella~ 项目
+
+#+BEGIN_SRC bash
+$ mix new kv_umbrella --umbrella
+#+END_SRC 
+
+生成的mix.exs 会不一样, 特别之处 ~apps_path~ 定义了子项目路径 apps
+
+#+BEGIN_SRC elixir
+defmodule KvUmbrella.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      apps_path: "apps",
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
+  end
+
+  defp deps do
+    []
+  end
+end
+#+END_SRC
+
+子项目在 apps 目录创建
+
+#+BEGIN_SRC bash
+$ cd kv_umbrella/apps
+$ mix new kv_server --module KVServer --sup
+#+END_SRC
+
+子项目 ~kv_server~ 中的 ~mix.exs~
+
+#+BEGIN_SRC elixir
+defmodule KVServer.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :kv_server,
+      version: "0.1.0",
+      build_path: "../../_build",
+      config_path: "../../config/config.exs",
+      deps_path: "../../deps",
+      lockfile: "../../mix.lock",
+      elixir: "~> 1.7-dev",
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
+  end
+
+  # Run "mix help compile.app" to learn about applications.
+  def application do
+    [
+      extra_applications: [:logger],
+      mod: {KVServer.Application, []}
+    ]
+  end
+
+  # Run "mix help deps" to learn about dependencies.
+  defp deps do
+    []
+  end
+end
+#+END_SRC
+
+mix会检测到是 umbrella 项目, 加入下面的配置 
+
+#+BEGIN_SRC elixir
+build_path: "../../_build",
+config_path: "../../config/config.exs",
+deps_path: "../../deps",
+lockfile: "../../mix.lock",
+#+END_SRC
+
+这样子项目的依赖在 ~kv_umbrella/deps~ 子项目会共享配置, 依赖等
+
+
+* doc & links: 
+
+- https://elixir-lang.org/getting-started/mix-otp/dependencies-and-umbrella-projects.html#external-dependencies
+- https://elixirschool.com/en/lessons/advanced/umbrella-projects/
+- https://medium.com/matic-insurance/designing-scalable-application-with-elixir-from-umbrella-project-to-distributed-system-42f28c7e62f1
+- https://www.youtube.com/watch?v=AnYm0rTJNVg

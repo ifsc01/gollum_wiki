@@ -1,0 +1,91 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: 使用 GB 构建 Go project
+
+* GB 介绍
+
+- Site:   https://getgb.io/
+- Github: https://github.com/constabulary/gb
+
+
+官网首页介绍 ~A project based build tool for the Go programming language.~
+
+所以gb 是一个构建工具，依赖管理插件完成的 gb-vendor [[https://godoc.org/github.com/constabulary/gb/cmd/gb-vendor][doc]]
+
+为什么用gb，最喜欢的一点是 ~Project based workflow~ 基于 project bashd，而不是 ~GOPATH based~ 
+
+项目不需要必须在 ~GOPATH~ 下
+
+
+** 项目结构
+
+两个重要的目录
+
+- $PROJECT/src/  我们自己的业务代码
+- $PROJECT/vendor/src/ 第三方的依赖在这
+
+比如 一个 名字叫 ~redeem~ 的项目, 项目结构
+
+#+BEGIN_SRC txt
+.
+├── README.md
+├── bin
+│   └── redeem
+├── src
+│   └── redeem
+│       └── main.go
+└── vendor
+    ├── manifest
+    └── src
+        ├── github.com
+        └── gopkg.in
+#+END_SRC
+
+使用 gb vendor 处理依赖, 比如
+
+#+BEGIN_SRC bash
+$ gb vendor fetch github.com/urfave/cli
+#+END_SRC
+
+* Gitlab CI
+
+要想使用Go build 方式在 GOPATH 里构建也非常方便, 我在Gitlab ci 就是这么处理的
+
+Gitlab ci上构建项目使用了 ~image: golang:latest~ 并没有安装gb工具，可以直接使用 ~go build~
+
+只需要把依赖 ~/vendor/src~ 放到 ~src/redeem/vendor~ , GOPATH 设置了 ~GOPATH: $CI_PROJECT_DIR~
+
+如 ~before_script:~ 部分
+
+#+BEGIN_SRC yaml
+image: golang:latest
+
+variables:
+  GOPATH: $CI_PROJECT_DIR
+before_script:
+  - mv vendor/src/* src/redeem/vendor/
+  - cd src/redeem
+
+stages:
+    - test
+    - build
+
+format:
+    stage: test
+    script:
+      - go fmt $(go list ./... | grep -v /vendor/)
+      - go vet $(go list ./... | grep -v /vendor/)
+      - go test -race $(go list ./... | grep -v /vendor/)
+
+compile:
+    stage: build
+    script:
+      - GOOS=darwin GOARCH=amd64 go build -o $CI_PROJECT_DIR/redeem_mac
+      - GOOS=windows GOARCH=amd64 go build -o $CI_PROJECT_DIR/redeem_win
+    artifacts:
+      paths:
+        - redeem_mac
+        - redeem_win
+
+#+END_SRC
+

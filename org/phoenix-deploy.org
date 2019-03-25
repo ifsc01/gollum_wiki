@@ -1,0 +1,199 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: Phoenix 部署记
+
+* 安装elixir
+
+https://elixir-lang.org/install.html#unix-and-unix-like
+
+使用ubuntu安装
+
+Erlang Solutions repo: 
+~wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb && sudo dpkg -i erlang-solutions_1.0_all.deb~
+
+Run: ~sudo apt-get update~
+
+Install the Erlang/OTP platform and all of its applications: ~sudo apt-get install esl-erlang~
+
+Install Elixir: ~sudo apt-get install elixir~
+
+* phoenix 部署流程
+
+官方文档 https://hexdocs.pm/phoenix/deployment.html 
+
+1. 处理配置文件，应用secret token, config.exs, prod.exs
+2. 编译静态文件, node & brunch
+3. 生产模式下启动，distillery & mix
+
+* 配置
+** https 配置
+
+使用 [[https://certbot.eff.org/lets-encrypt/ubuntuxenial-other][certbot]] 管理  Let's Encrypt  证书
+
+phoenix prod.exs https 配置示例
+
+#+NAME: prod.exs
+#+BEGIN_SRC elixir
+config :books, BooksWeb.Endpoint,
+  load_from_system_env: false,
+  url: [host: "example.com", port: 443],
+  force_ssl: [hsts: true],
+  https: [:inet6,
+          port: 443,
+          keyfile: "/etc/letsencrypt/live/example.com/privkey.pem",
+          cacertfile: "/etc/letsencrypt/live/example.com/chain.pem",
+          certfile: "/etc/letsencrypt/live/example.com/cert.pem"]
+#+END_SRC
+
+~load_from_system_env~ 控制是否从环境变量加载配置, 比如 ~PORT~
+
+
+* Phoenix 项目单独启动方式
+
+如果不使用 ~distillery~ 打包, 不使用 ~systemd~ 类的daemon管理
+
+可以直接使用 ~mix~ 命令启动
+
+后台daemon
+
+#+BEGIN_SRC bash
+$ sudo MIX_ENV=prod elixir --detached -S mix do compile, phx.server
+#+END_SRC
+
+不进入后台
+
+#+BEGIN_SRC bash
+$ sudo MIX_ENV=prod mix phx.server
+#+END_SRC
+
+没有进程管理，持掉不能重启
+
+* distillery
+  
+   - [[https://github.com/bitwalker/distillery][A pure Elixir implementation of release packaging functionality for the Erlang VM]]
+   - [[https://hexdocs.pm/distillery/use-with-phoenix.html][Using Distillery With Phoenix]]
+
+ 
+使用distillery 打包 生产环境的release, 使用 distillery 更复杂
+
+#+BEGIN_SRC bash
+$ MIX_ENV=prod mix release 
+#+END_SRC
+
+部署到不同的平台的话， 设置 ~rel/config.exs~
+
+~include_erts: false~ 或者 ~include_erts: path/to/cross/compiled/erts~
+
+要部署的tar包位置在 ~_build/prod/rel/<name>/releases/<version>/<name>.tar.gz~
+
+复制到部署机器解压 ~tar -xzf <name>.tar.gz~ 或者直接在部署机器跑release任务
+
+* distillery & systemd 配置
+
+** systemd 配置示例
+
+distillery([[https://github.com/bitwalker/distillery/blob/master/docs/guides/systemd.md#3-run-app-in-foreground-using-a-simple-systemd-configuration][doc]]) 提供三种systemd配置方式
+
+使用第二，第三种更方便，第一种需要生成pid文件
+
+比如我们项目是books，systemd配置文件如下 ~/etc/systemd/system/books.service~
+我们使用 ~foreground~ &  ~simple~ 方式, ~ExecStart~ 启动当前服务的命令时，使用 ~foreground~ , ~systemd~  Type 配置为 ~simple~
+
+#+BEGIN_SRC bash
+[Unit]
+Description=books
+After=network.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+WorkingDirectory=/home/ifsclimbing/books
+ExecStart=/home/ifsclimbing/books/_build/prod/rel/books/bin/books foreground
+ExecStop=/home/ifsclimbing/books/_build/prod/rel/books/bin/books stop
+Restart=on-failure
+RestartSec=5
+Environment=MIX_ENV=prod
+Environment=LANG=en_US.UTF-8
+SyslogIdentifier=books
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
+#+END_SRC
+
+** systemd Type 配置
+
+systemd 根据 ~Type=forking~ ~Type=simple~ ExecStart 运行不同的命令
+
+在 systemd 配置中 Type：定义启动时的进程行为
+
+- Type=simple：默认值，执行ExecStart指定的命令，启动主进程
+- Type=forking：以 fork 方式从父进程创建子进程，创建后父进程会立即退出
+- Type=oneshot：一次性进程，Systemd 会等当前服务退出，再继续往下执行
+- Type=dbus：当前服务通过D-Bus启动
+- Type=notify：当前服务启动完毕，会通知Systemd，再继续往下执行
+
+** systemd 命令
+    
+ 更新配置文件完要执行
+
+#+BEGIN_SRC bash
+$ sudo systemctl daemon-reload
+#+END_SRC
+
+其它命令
+
+#+BEGIN_SRC bash
+$ sudo systemctl enable books
+$ sudo systemctl start books
+$ sudo systemctl status books
+#+END_SRC
+
+  
+* Mix & systemd 配置
+
+参考 https://elixirforum.com/t/elixir-apps-as-systemd-services-info-wiki/2400
+
+上面的配置改成下面的样子 ~ExecStart~ 修必为使用 ~mix~ , type 为 ~simple~
+
+
+#+BEGIN_SRC bash
+[Unit]
+Description=books2
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/home/ifsclimbing/books
+ExecStart=/usr/local/bin/mix phx.server 
+Restart=on-failure
+RestartSec=5
+Environment=MIX_ENV=prod
+Environment=LANG=en_US.UTF-8
+SyslogIdentifier=books2
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
+#+END_SRC
+
+查看日志
+
+#+BEGIN_SRC bash
+$ journalctl -u books2 -n 20
+#+END_SRC
+
+-u 表示哪个unit
+-n 表示行数, 查看最后20行
+
+
+
+* links
+
+- [[https://hexdocs.pm/distillery/runtime-configuration.html][Runtime Configuration – distillery v1.5.2]]
+- [[https://hexdocs.pm/distillery/custom-commands.html][Custom Commands – distillery v1.5.2]]
+- [[https://elixirforum.com/t/elixir-apps-as-systemd-services-info-wiki/2400][Elixir apps as systemd services - info & wiki - Elixir Chat - Elixir Forum]]
+- [[http://www.ruanyifeng.com/blog/2016/03/systemd-tutorial-commands.html][Systemd 入门教程：命令篇 - 阮一峰的网络日志]]

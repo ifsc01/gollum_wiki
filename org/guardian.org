@@ -1,0 +1,53 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: Guardian 库笔记
+
+* 介绍
+
+[[https://github.com/ueberauth/guardian][Guardian]] 基于 JWT 实现的一个认证库 (认证和授权的区别 authentication authorization)
+
+- authentication 认证
+- authorization 授权
+
+
+JWT的token可以表示更多的信息 比如
+
+- 签发这个token的人
+- 这个token签发给谁的
+- 哪个system可以使用这个token
+- 签发时间
+- token 过期时间
+
+除了这些 Guardian 还提供了额外的字段表示一些信息
+
+- token 的类型
+- 有哪些权限
+
+Guardian 可以用于很多场景
+
+默认使用 JWT,  也可以是其它类型的token, 要自己实现 ~Guardian.Token~ behaviour
+
+** Guardian.Token
+
+~Guardian.Token~ 为token模块定义了 behaviour 
+
+- [[https://hexdocs.pm/guardian/Guardian.Token.html][Guardian.Token – Guardian v1.0.1]]
+- [[https://github.com/ueberauth/guardian/blob/master/lib/guardian/token.ex][guardian/token.ex at master · ueberauth/guardian]]
+
+
+JWT 是token 的默认实现, 我们也可以定义自己的token
+
+- [[https://hexdocs.pm/guardian/Guardian.Token.Jwt.html#content][Guardian.Token.Jwt – Guardian v1.0.1]]
+- [[https://github.com/ueberauth/guardian/blob/v1.0.1/lib/guardian/token/jwt.ex][guardian/jwt.ex at v1.0.1 · ueberauth/guardian]]
+
+
+
+* links
+
+- [[https://evalcode.com/simple-guardian/][Simple Guardian - Browser login]]
+- [[https://github.com/ueberauth/guardian][ueberauth/guardian: Elixir Authentication]]
+- [[https://hexdocs.pm/guardian/api-reference.html][API Reference – Guardian v1.0.1]]
+- [[https://github.com/hassox/phoenix_guardian][hassox/phoenix_guardian: A demo application showing usage of guardian and ueberauth]]
+- [[https://github.com/ylankgz/shlack][ylankgz/shlack: Slack clone, groupchat app]]
+- [[https://github.com/ueberauth/guardian][ueberauth/guardian: Elixir Authentication]]
+- [[https://elixirschool.com/en/lessons/libraries/guardian/][Guardian (Basics) · Elixir School]]

@@ -1,0 +1,175 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: 11 Working with components
+
+
+** OTP applications
+
+一个OTP application是由多个模块组成的组件，可以依赖于其他application，
+这使得可以通过单个函数调用启动整个系统和相关组件
+
+OTP应用程序的组成
+
+一个应用程序定义使用 ~application resource file~ (a plain-text file written in Erlang terms )描述
+ 
+包含的信息
+
+- application 名字 版本 描述
+- 有哪些模块
+- 有哪些application依赖
+- 可选的 application-callback 模块
+
+使用 ~Application~ 模块启动关闭应用, 底层代码将动态加载此资源文件（显然必须位于加载路径中的某个位置）并启动您的应用程序
+启动应用程序相当于启动所有依赖项，然后启动应用程序本身, 通过调用回调模块的 ~start/2~ 函数来完成
+
+
+** 11.1.1  Creating applications with the mix tool
+
+~mix~ 工具帮我们处理这些
+
+创建 项目 ~mix new hello_world --sup~ 
+~--sup~ 会创建  application callback 模块 和 空的supervisor 
+
+~iex -S mix~ 启动项目
+
+~Application.started_applications/0~ 可以查询已经启动的应用 
+
+#+BEGIN_SRC elixir
+
+iex(1)> Application.started_applications()
+[
+  {:hello_world, 'hello_world', '0.1.0'},
+  {:logger, 'logger', '1.7.3'},
+  {:mix, 'mix', '1.7.3'},
+  {:iex, 'iex', '1.7.3'},
+  {:elixir, 'elixir', '1.7.3'},
+  {:compiler, 'ERTS  CXC 138 10', '7.2.3'},
+  {:stdlib, 'ERTS  CXC 138 10', '3.5.1'},
+  {:kernel, 'ERTS  CXC 138 10', '6.0'}
+]
+
+#+END_SRC
+
+~hello_world~ 应用已经启动了
+
+如何配置 application 主要配置在 mix.exs 
+
+如下 
+
+#+BEGIN_SRC elixir
+
+defmodule HelloWorld.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :hello_world,
+      version: "0.1.0",
+      elixir: "~> 1.7",
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
+  end
+
+  # Run "mix help compile.app" to learn about applications.
+  def application do
+    [
+      extra_applications: [:logger],
+      mod: {HelloWorld.Application, []}
+    ]
+  end
+
+  # Run "mix help deps" to learn about dependencies.
+  defp deps do
+    [
+      # {:dep_from_hexpm, "~> 0.3.0"},
+      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
+    ]
+  end
+end
+#+END_SRC
+
+~app: :hello_world~ 配置了 应用名 
+
+~application/0~ 描述了application, 依赖, 默认的依赖application ~:logger~
+
+
+** 11.1.2应用程序行为
+
+~mod: {HelloWorld, []}~ 描述了application从哪个模块启动，以及参数
+
+启动时 ~HelloWorld.Application.start/2~ 会被调用
+
+
+HelloWorld.Application
+
+#+BEGIN_SRC elixir
+defmodule HelloWorld.Application do
+  use Application
+
+  def start(_type, _args) do
+    children = []
+    opts = [strategy: :one_for_one, name: HelloWorld.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
+#+END_SRC
+
+至少要实现 ~start/2~ 函数， 一般启动我们的supervisor监控树
+返回值要求是 ~{:ok, pid}~ 或者 ~{:error, reason}~
+
+** 11.1.3  Starting the application
+
+在BEAM 实例上启动应用调用 ~Application.start/1~, 这个函数查询描述文件,然后它会验证所依赖的所有应用程序是否都已启动, 
+还有 ~Application.ensure_all_started/2~ 函数可用, 它以递归方式启动尚未启动的所有依赖项
+
+~iex -S mix~ 自动启动应用和依赖应用
+
+#+BEGIN_SRC elixir
+$ iex -S mix
+iex(1)> Application.start(:hello_world)
+{:error, {:already_started, :hello_world}}
+#+END_SRC
+
+启动已经运行的应用会返回错误
+
+也可以使用 ~Application.stop/1~ 停止应用程序
+
+#+BEGIN_SRC elixir
+
+iex(2)> Application.stop(:hello_world)
+:ok
+[info] Application hello_world exited: :stopped
+#+END_SRC
+
+~Application.stop/1~ 只停止应用，停掉整个系统使用 ~System.stop/0~ 这个函数会停止所有OTP应用程序，然后停止BEAM实例本身
+
+监督树中的每个进程都可以在其 ~terminate/1~ 回调中执行一些最终清理
+
+** 11.1.4  Library applications
+
+也可以不配置 ~mod:~ 
+
+#+BEGIN_SRC elixir
+
+defmodule HelloWorld.Application do
+  ...
+
+  def application do
+    []
+  end
+
+  ...
+end
+
+#+END_SRC
+
+在这种情况下，没有应用程序回调模块, 这反过来意味着没有顶级process可以启动, 奇怪的是,这仍然是一个合适的OTP应用程序, 你甚至可以启动并停止它
+
+这种是 ~library application~ , 不需要创建自己的监督树的组件, 一个典型的例子是JSON解析器
+
+
+
+
+
+

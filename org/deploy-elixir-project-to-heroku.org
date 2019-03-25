@@ -1,0 +1,35 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: 在heroku上部署Elixir非Phoenix项目
+
+* 在heroku上创始项目
+
+
+使用 https://github.com/HashNuke/heroku-buildpack-elixir 这个 Buildpack
+
+#+BEGIN_SRC bash
+$ heroku apps:create huobi-bot-ex --buildpack "https://github.com/HashNuke/heroku-buildpack-elixir.git"
+#+END_SRC
+
+配置 Elixir 版本
+
+编辑项目下 ~elixir_buildpack.config~ 文件
+
+[[https://ws3.sinaimg.cn/large/006tKfTcgy1fqeual4sm5j30h807s3z6.jpg]]
+
+* 只有worker，不需要web
+
+设置 web 为0，worker 为 1
+
+#+BEGIN_SRC bash
+$ heroku ps:scale worker=1 -a huobi-bot-ex
+$ heroku ps:scale web=0 -a huobi-bot-ex
+#+END_SRC
+
+
+Procfile 
+
+#+BEGIN_SRC bash
+worker: mix run --no-halt 
+#+END_SRC
+

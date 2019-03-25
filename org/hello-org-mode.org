@@ -1,0 +1,32 @@
+#+OPTIONS: html-style:nil
+#+TITLE: Hello World org mode
+
+* hello world
+
+#+BEGIN_SRC ruby
+  # The famous Hello World
+  puts "Hello World!"
+#+END_SRC
+
+
+* 时间戳
+
+我用的是 ~hybrid~ mode
+
+1. ~C-c .~ <2018-04-08 Sun>
+2. ~SPC u , .~ <2018-04-08 Sun 20:17>
+3. ~C-u C-c.~ <2018-04-08 Sun 20:18>
+
+* links
+
+- [[https://github.com/gongzhitaao/orgcss][gongzhitaao/orgcss: Simple and clean CSS for Org-exported HTML]]
+- [[https://www.cnblogs.com/Open_Source/archive/2011/07/17/2108747.html#sec-9][Org-mode 简明手册 - open source - 博客园]]
+- [[https://github.com/syl20bnr/spacemacs/tree/master/layers/%2Bemacs/org][spacemacs/layers/+emacs/org at master · syl20bnr/spacemacs]]
+- [[https://emacs.stackexchange.com/questions/12336/org-export-to-latex-and-html-references][org mode - Org export to latex and HTML references - Emacs Stack Exchange]]
+- [[https://orgmode.org/worg/org-tutorials/org-publish-html-tutorial.html][Publishing Org-mode files to HTML]]
+- [[https://orgmode.org/manual/#toc-Working-with-source-code-1][The Org Manual: Top]]
+- [[https://gongzhitaao.org/orgcss/#org4193138][CSS for Org-exported HTML]]
+- [[https://orgmode.org/manual/HTML-export.html][The Org Manual: HTML export]]
+- [[https://orgmode.org/manual/CSS-support.html#CSS-support][The Org Manual: CSS support]]
+- [[https://orgmode.org/worg/org-web.html][Web Pages Made with Org-Mode]]
+

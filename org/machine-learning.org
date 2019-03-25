@@ -1,0 +1,55 @@
+#+OPTIONS: html-style:nil
+#+TITLE:  Machine Learning 
+
+Google Developers的机器学习教程
+
+Youtube: [[https://www.youtube.com/playlist?list=PLOU2XLYxmsIIuiBfYad6rFYQU_jL2ryal][Machine Learning Recipes with Josh Gordon]]
+
+* Hello World - Machine Learning Recipes #1
+
+** 编写代码分辨apple和orange的问题
+
+  - 常规基于手写规则不能有效处理所有情况
+  - 算法来自动发现规则
+    - Classifier 输入一些数据，输出一些标签
+    - 使用[[http://scikit-learn.org/][scikit-learn]] 库 ~sudo pip install -U scikit-learn~
+  - supervised learn 监督学习
+    - 搜集训练数据 样本
+      * apple和orange的不同，记录到表格，机器学习中叫特征, ~weight~, ~texture~ ~Label~
+      * 更多更好的数据，创造更好的 ~classifier~
+    - 训练数据
+      - 训练分类器 ~decision tree 决策树~
+      - 训练数据得到一定的模式
+    - 输出结果
+    
+
+code: 
+
+#+BEGIN_SRC python
+from sklearn import tree
+
+# 表示 weight 和 texture
+features = [[140, 1], [130, 1], [150, 0], [170, 0]]
+# 表示期望分类器的输出
+labels = [0, 0, 1, 1]
+# 分类器
+clf = tree.DecisionTreeClassifier()
+# 发现模式
+clf = clf.fit(features, labels)
+print(clf.predict([[150, 0]]))
+#+END_SRC
+
+** links
+
+- http://scikit-learn.org/stable/install.html
+- https://www.anaconda.com/download/#macos
+- [[https://www.youtube.com/watch?v=cKxRvEZd3Mw&list=PLOU2XLYxmsIIuiBfYad6rFYQU_jL2ryal&t=206s&index=1][Hello World - Machine Learning Recipes #1 - YouTube]]
+- [[https://www.cnblogs.com/pinard/p/6056319.html][scikit-learn决策树算法类库使用小结 - 刘建平Pinard - 博客园]]
+- [[http://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html][sklearn.tree.DecisionTreeClassifier — scikit-learn 0.19.1 documentation]]
+
+  
+
+* Visualizing a Decision Tree - Machine Learning Recipes #2
+
+todo
+

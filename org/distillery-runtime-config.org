@@ -1,0 +1,16 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: Distillery Runtime Configuration
+
+[[https://hexdocs.pm/distillery/runtime-configuration.html][Runtime Configuration]] 文档笔记 
+
+
+* config.exs & sys.config
+
+对Elixir项目，一般用 ~config.exs~ 进行项目配置, 但是
+
+- 使用 Distillery 发布 release 包 并不包含任何 ~Mix projec~ 信息, 项目不能使用任何 ~Mix.*~ 下模块
+- 也不能使用 Mix tasks, Mix 设计有自己的项目结构，必须有 ~mix.exs~ 
+- 对于Mix 项目，配置读取是在运行时，比如可以使用 ~System.get_env/1~ 获取环境变量，加载不同环境的配置，对于 ~releases~, ~config.exs~ 在编译时确定，并且转成 ~sys.config~ 文件
+
+* 配置转换

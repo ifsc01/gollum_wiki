@@ -1,0 +1,80 @@
+#+EMAIL:  ldshuang@gmail.com
+#+TITLE: leetcode
+
+https://leetcode-cn.com
+
+* problems
+
+** [[https://leetcode-cn.com/problems/n-repeated-element-in-size-2n-array/][重复 N 次的元素 - 力扣 (LeetCode)]]
+
+*** golang 
+
+#+BEGIN_SRC golang
+func repeatedNTimes(A []int) int {
+    n := len(A)/2
+    
+    result := make(map[int]int)
+    for _, v := range A {
+        val, ok := result[v]
+        if ok {
+            result[v] = val + 1
+        } else {
+            result[v] = 1
+        }
+    }
+    
+    for k,v := range result {
+        if v == n {
+            return k
+        }
+    }
+    panic("error")
+}
+#+END_SRC
+
+*** rust 
+
+    - vec example: https://doc.rust-lang.org/rust-by-example/std/vec.html
+    - hash map: https://doc.rust-lang.org/rust-by-example/std/hash.html
+    - http://wiki.jikexueyuan.com/project/rust-primer/collections/hashmap.html
+    - https://rustwiki.org/zh-CN/rust-by-example/std/hash.html
+    - https://kaisery.github.io/trpl-zh-cn/ch08-03-hash-maps.html
+    
+
+entry api 
+
+#+BEGIN_QUOTE
+检查某个特定的键是否有值，如果没有就插入一个值。为此哈希 map 有一个特有的 API，叫做 entry，它获取我们想要检查的键作为参数。
+entry 函数的返回值是一个枚举，Entry，它代表了可能存在也可能不存在的值。
+~scores.entry(String::from("Blue")).or_insert(50);~
+
+#+END_QUOTE
+
+#+BEGIN_SRC rust
+use std::collections::HashMap;
+
+
+impl Solution {
+    pub fn repeated_n_times(a: Vec<i32>) -> i32 {
+        let mut result = HashMap::new();
+        
+        for x in a.iter() {
+            let v: i32 = if result.contains_key(x) {
+                result[x] + 1
+            } else {
+                1
+            };
+            result.insert(x, v);
+        }
+        
+        let n: i32 = a.len() as i32 / 2;
+        let mut return_n: i32 = 0;
+        for (&k, &v) in result.iter() {
+            if v == n {
+                return_n = *k;
+            }  
+        }
+        return_n
+    }
+}
+#+END_SRC

@@ -1,0 +1,255 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: 使用Journalctl查询日志 
+
+英文原文
+[[https://www.digitalocean.com/community/tutorials/how-to-use-journalctl-to-view-and-manipulate-systemd-logs][How To Use Journalctl to View and Manipulate Systemd Logs | DigitalOcean]]
+
+* tldr
+
+systemd 有自己的方式处理日志文件, 而不需要依赖任何外部日志系统
+
+- ~systemd~ 提供统一的日志处理功能, 工具命令 ~journalctl~ 
+- ~journald~ 收集处理所有的内核, 进程产生的日志, 存储使用二进制存储, 可以方便的转换成不同的格式
+- 可以和 ~syslog~ 一起使用, 比如 ~syslog~ 作为日志中心服
+
+* 基本 journalctl 命令
+
+- 查看所有日志 ~$ journalctl~, 类似 ~less~ 命令, 老的日志在上面
+- 查看系统本次启动的日志 ~$ journalctl -b~
+
+查看所有的启动日志, 在一台ubuntu 16.04执行命令的结果
+
+#+BEGIN_SRC txt
+$ journalctl --list-boots
+0 28eb5f70cb7c481bae3698d85005392e Sat 2018-04-07 22:02:19 UTC—Sun 2018-04-08 17:20:02 UTC
+#+END_SRC
+
+并不是所有的发行版都会保存过去启动的日志
+
+配置  ~$ sudo nano /etc/systemd/journald.conf~ 来存储过去启动日志
+
+#+BEGIN_SRC txt /etc/systemd/journald.conf
+[Journal]
+Storage=persistent
+#+END_SRC
+
+日志存放路径 ~$ sudo mkdir -p /var/log/journal~
+
+多份启动日志
+
+#+BEGIN_SRC txt
+-2 caf0524a1d394ce0bdbcff75b94444fe Tue 2015-02-03 21:48:52 UTC—Tue 2015-02-03 22:17:00 UTC
+-1 13883d180dc0420db0abcb5fa26d6198 Tue 2015-02-03 22:17:03 UTC—Tue 2015-02-03 22:19:08 UTC
+ 0 bed718b17a73415fade0e4e7f4bea609 Tue 2015-02-03 22:19:12 UTC—Tue 2015-02-03 23:01:01 UTC
+#+END_SRC
+
+查看日志 使用 ~journalctl -b -1~ 或者 ~journalctl -b caf0524a1d394ce0bdbcff75b94444fe~
+
+
+** 基于时间查询日志
+
+使用 ~--since~ 和 ~--until~ 选项
+
+时间格式  ~YYYY-MM-DD HH:MM:SS~
+
+例如 
+
+#+BEGIN_SRC bash
+$ journalctl --since "2015-01-10 17:15:00"
+#+END_SRC
+
+某段时间范围内
+
+#+BEGIN_SRC bash
+$ journalctl --since "2015-01-10" --until "2015-01-11 03:00"
+#+END_SRC
+
+也可以使用 "yesterday", "today", "tomorrow", "now" 等
+
+查看昨天的日志 ~journalctl --since yesterday~
+
+如果收到上午9:00开始的服务中断报告，并且持续到一小时前，可以这样查询日志
+
+#+BEGIN_SRC bash
+$ journalctl --since 09:00 --until "1 hour ago"~
+#+END_SRC
+
+* 过滤日志
+
+** 通过 Unit 
+
+使用 ~-u~ 参数
+
+查看nginx的日志
+
+#+BEGIN_SRC bash
+$ journalctl -u nginx.service
+#+END_SRC
+
+加上时间过滤
+
+#+BEGIN_SRC bash
+$ journalctl -u nginx.service --since today
+#+END_SRC
+
+同时查看不同unit产生的日志非常方便
+
+#+BEGIN_SRC bash
+$ journalctl -u nginx.service -u php-fpm.service --since today
+#+END_SRC
+
+这样就可以按顺序时间查看nginx和php-fpm产生的日志
+
+** 通过 pid user Group ID 过滤
+
+查看 pid 8088 进程的日志 ~journalctl _PID=8088~
+查看 uid 33 今天的日志 ~journalctl _UID=33 --since today~, 用户组是 ~_GID~ 参数
+
+查看 所有可用字段 ~man systemd.journal-fields~
+
+一个更有用的选项 ~-F~ 会列表以下划线开头的字段的可用值
+
+#+BEGIN_SRC bash
+$ journalctl -F _UID
+0
+1002
+$ journalctl -F _GID
+1003
+0
+#+END_SRC
+
+列出的值就是所有存储在日志中可用的值
+
+** 查看内核日志
+
+使用 -k 或者  --dmesg
+
+#+BEGIN_SRC bash
+$ journalctl -k
+#+END_SRC
+
+也可以查看指定某次boot的日志
+
+#+BEGIN_SRC bash
+$ journalctl -k -b -5
+#+END_SRC
+
+** 根据日志优先级(Priority)
+
+使用 ~-p~ 选项 比如 ~journalctl -p err -b~ 会显示 error, critical, alert, emergency 优先级的日志
+
+所有的优先级
+
+#+BEGIN_SRC txt
+0: emerg
+1: alert
+2: crit
+3: err
+4: warning
+5: notice
+6: info
+7: debug
+#+END_SRC
+
+* 日志显示
+** 显示格式
+
+使用 ~-o~ 指定输出日志格式
+
+#+BEGIN_SRC bash
+$journalctl -b -u nginx -o json
+
+{ "__CURSOR" : "s=13a21661cf4948289c63075db6c25c00;i=116f1;b=81b58db8fd9046ab9f847ddb82a2fa2d;m=19f0daa;t=50e33c33587ae;x=e307daadb4858635", "__REALTIME_TIMESTAMP" : "1422990364739502", "__MONOTONIC_TIMESTAMP" : "27200938", "_BOOT_ID" : "81b58db8fd9046ab9f847ddb82a2fa2d", "PRIORITY" : "6", "_UID" : "0", "_GID" : "0", "_CAP_EFFECTIVE" : "3fffffffff", "_MACHINE_ID" : "752737531a9d1a9c1e3cb52a4ab967ee", "_HOSTNAME" : "desktop", "SYSLOG_FACILITY" : "3", "CODE_FILE" : "src/core/unit.c", "CODE_LINE" : "1402", "CODE_FUNCTION" : "unit_status_log_starting_stopping_reloading", "SYSLOG_IDENTIFIER" : "systemd", "MESSAGE_ID" : "7d4958e842da4a758f6c1cdc7b36dcc5", "_TRANSPORT" : "journal", "_PID" : "1", "_COMM" : "systemd", "_EXE" : "/usr/lib/systemd/systemd", "_CMDLINE" : "/usr/lib/systemd/systemd", "_SYSTEMD_CGROUP" : "/", "UNIT" : "nginx.service", "MESSAGE" : "Starting A high performance web server and a reverse proxy server...", "_SOURCE_REALTIME_TIMESTAMP" : "1422990364737973" }
+#+END_SRC
+
+指定 ~json-pretty~ 更好的显示json
+
+#+BEGIN_SRC bash
+$ journalctl -b -u nginx -o json-pretty
+
+{
+    "__CURSOR" : "s=13a21661cf4948289c63075db6c25c00;i=116f1;b=81b58db8fd9046ab9f847ddb82a2fa2d;m=19f0daa;t=50e33c33587ae;x=e307daadb4858635",
+    "__REALTIME_TIMESTAMP" : "1422990364739502",
+    "__MONOTONIC_TIMESTAMP" : "27200938",
+    "_BOOT_ID" : "81b58db8fd9046ab9f847ddb82a2fa2d",
+    "PRIORITY" : "6",
+    "_UID" : "0",
+    "_GID" : "0",
+    "_CAP_EFFECTIVE" : "3fffffffff",
+    "_MACHINE_ID" : "752737531a9d1a9c1e3cb52a4ab967ee",
+    "_HOSTNAME" : "desktop",
+    "SYSLOG_FACILITY" : "3",
+    "CODE_FILE" : "src/core/unit.c",
+    "CODE_LINE" : "1402",
+    "CODE_FUNCTION" : "unit_status_log_starting_stopping_reloading",
+    "SYSLOG_IDENTIFIER" : "systemd",
+    "MESSAGE_ID" : "7d4958e842da4a758f6c1cdc7b36dcc5",
+    "_TRANSPORT" : "journal",
+    "_PID" : "1",
+    "_COMM" : "systemd",
+    "_EXE" : "/usr/lib/systemd/systemd",
+    "_CMDLINE" : "/usr/lib/systemd/systemd",
+    "_SYSTEMD_CGROUP" : "/",
+    "UNIT" : "nginx.service",
+    "MESSAGE" : "Starting A high performance web server and a reverse proxy server...",
+    "_SOURCE_REALTIME_TIMESTAMP" : "1422990364737973"
+}
+#+END_SRC
+
+
+其它格式
+
+- cat: 仅显示消息字段本身
+- export: 适合传输或备份的二进制格式
+- json: 标准JSON，每行一个条目
+- json-pretty：更好可读性的json
+- json-sse:  server-sent event 兼容的json格式
+- short: 默认syslog的显示格式
+- short-iso: ISO 8601 时间戳
+- short-monotonic
+- short-precise: 微秒精度
+- verbose 显示所有日志可用字段
+
+* 动态显示日志
+
+** 显示最近的日志
+
+使用 ~-n~ 选项, ~journalctl -n~ 默认显示最近10条日志, 显示20条需要指定条数  ~journalctl -n 20~
+
+实时滚动显示最新日志,  使用 ~-f~ 选项 ~journalctl -f~
+
+* 其它
+
+查看日志存储空间 
+
+#+BEGIN_SRC bash
+$ journalctl --disk-usage
+
+Journals take up 8.0M on disk.
+#+END_SRC
+
+
+删除老日志
+
+~sudo journalctl --vacuum-size=1G~ --vacuum-size 选项删除日志直到指定的容量
+
+使用 --vacuum-time 根据时间删除日志, 删除去年的日志 ~sudo journalctl --vacuum-time=1years~
+
+~/etc/systemd/journald.conf~ 一些配置项可以限制Journal 空间占用
+
+- SystemMaxUse 指定日记在持久存储中可以使用的最大磁盘空间
+- SystemKeepFree 
+- SystemMaxFileSize 单个日志大小
+- RuntimeMaxUse 最大占用 ~/run~ 大小
+- RuntimeKeepFree 
+- RuntimeMaxFileSize 运行时单个日志最大, ~/run~
+
+* links
+  
+- [[https://www.ibm.com/developerworks/cn/linux/1407_liuming_init2/index.html][浅析 Linux 初始化 init 系统，第 2 部分: UpStart]]
+- [[https://www.ibm.com/developerworks/cn/linux/1407_liuming_init3/index.html][浅析 Linux 初始化 init 系统，第 3 部分: Systemd]]
+- [[https://wiki.archlinux.org/index.php/systemd_(%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87)][Systemd (简体中文) - ArchWiki]]
+- [[https://wiki.debian.org/Debate/initsystem/systemd][Debate/initsystem/systemd - Debian Wiki]]
+- [[https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files][Understanding Systemd Units and Unit Files | DigitalOcean]]
+

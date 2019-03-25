@@ -1,0 +1,532 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: Golang flag package notes
+
+原文 https://github.com/parsiya/Hacking-with-Go/blob/master/content/03.1.md
+
+** flag包基本使用
+
+flag 提供命令参数处理功能
+
+可以声明类型有 string int bool
+
+例如
+
+#+BEGIN_SRC go
+ipPtr := flag.String("ip", "127.0.0.1", "target IP")
+#+END_SRC
+
+如下 
+
+- Flag 类型是 String
+- ipPtr 指向Flag值的指针
+- ip Flag的名字
+- 127.0.0.1: Flag 默认名字
+- target IP: Flag 描述 -h 时显示
+
+
+ 也可以直接传递指针 
+
+#+BEGIN_SRC go
+var port int
+flag.IntVar(&port, "port", 8080, "Port")
+#+END_SRC
+
+
+#+BEGIN_SRC go
+
+// 03.1-01-flag1.go
+package main
+
+import (
+    "flag"
+    "fmt"
+)
+
+func main() {
+
+    // Declare flags
+    // Remember, flag methods return pointers
+    ipPtr := flag.String("ip", "127.0.0.1", "target IP")
+
+    var port int
+    flag.IntVar(&port, "port", 8080, "Port")
+
+    verbosePtr := flag.Bool("verbose", true, "verbosity")
+
+    // Parse flags
+    flag.Parse()
+
+    // Hack IP:port
+    fmt.Printf("Hacking %s:%d!\n", *ipPtr, port)
+
+    // Display progress if verbose flag is set
+    if *verbosePtr {
+        fmt.Printf("Pew pew!\n")
+    }
+}
+#+END_SRC
+
+
+这个代码有个问题，能发现它吗？如果没有，不要担心。
+
+-h/-help 显示
+
+#+BEGIN_SRC go
+
+$ go run 03.1-01-flag1.go -h
+Usage of ... \_obj\exe\03.1-01-flag1.exe:
+  -ip string
+        target IP (default "127.0.0.1")
+  -port int
+        Port (default 8080)
+  -verbose
+        verbosity (default true)
+exit status 2
+#+END_SRC
+
+
+没有任何 flag，运行结果是这样
+
+#+BEGIN_SRC
+$ go run 03.1-01-flag1.go
+Hacking 127.0.0.1:8080!
+Pew pew!
+#+END_SRC
+
+
+加flag
+
+#+BEGIN_SRC 
+$ go run 03.1-01-flag1.go -ip 10.20.30.40 -port 12345
+Hacking 10.20.30.40:12345!
+Pew pew!
+#+END_SRC
+
+问题是boolean flag的默认值，如果 boolean flag 出现，刚值为true，我们设置了默认值是true，就没办法处理false的情况
+
+将verbose设置为默认为false执行
+
+#+BEGIN_SRC 
+
+$ go run 03.1-02-flag2.go -ip 10.20.30.40 -port 12345
+Hacking 10.20.30.40:12345!
+
+$ go run 03.1-02-flag2.go -ip 10.20.30.40 -port 12345 -verbose
+Hacking 10.20.30.40:12345!
+Pew pew!
+
+#+END_SRC
+
+~=~ 是允许的, 也可以通过这种方式设置boolean flag 
+
+#+BEGIN_SRC 
+$ go run 03.1-02-flag2.go -ip=20.30.40.50 -port=54321 -verbose=true
+Hacking 20.30.40.50:54321!
+Pew pew!
+
+$ go run 03.1-02-flag2.go -ip=20.30.40.50 -port=54321 -verbose=false
+Hacking 20.30.40.50:54321!
+#+END_SRC
+
+~--flag~ 这种也可以使用
+
+#+BEGIN_SRC 
+
+$ go run 03.1-02-flag2.go --ip 20.30.40.50 --port=12345 --verbose
+Hacking 20.30.40.50:12345!
+Pew pew!
+
+#+END_SRC
+
+** 在init函数中声明flag 
+
+一般在 ~init~ 函数里声明flag
+
+
+#+BEGIN_SRC go
+
+package main
+
+import (
+    "flag"
+    "fmt"
+)
+
+// Declare flag variables
+var (
+    ip      string
+    port    int
+    verbose bool
+)
+
+func init() {
+    // Declare flags
+    // Remember, flag methods return pointers
+    flag.StringVar(&ip, "ip", "127.0.0.1", "target IP")
+
+    flag.IntVar(&port, "port", 8080, "Port")
+
+    flag.BoolVar(&verbose, "verbose", false, "verbosity")
+}
+
+func main() {
+
+    // Parse flags
+    flag.Parse()
+
+    // Hack IP:port
+    fmt.Printf("Hacking %s:%d!\n", ip, port)
+
+    // Display progress if verbose flag is set
+    if verbose {
+        fmt.Printf("Pew pew!\n")
+    }
+}
+
+#+END_SRC
+
+
+** 自定义flag类型和多值
+
+
+ 自定义类型需要实现  flag.Value interface, 文档 https://godoc.org/flag#Value 
+
+#+BEGIN_SRC go
+type Value interface {
+    String() string
+    Set(string) error
+}
+#+END_SRC
+
+
+简单来说：
+
+1. 创建新的类型 ~mytype~
+2. 创建两个方法 ~String()~ 和 ~Set()~ 接受者为 ~*mytype~
+   - ~String()~ 将自定义类型转换为字符串并返回它
+   - ~Set(string)~ 设置类型的值，如果有错误返回error
+3. 创建一个没有初始值的新flag：
+   - 调用 ~flag.NewFlagSet(&var~  而不是 ~flag.String(~
+   - 调用 ~flag.Var(~  而不是 ~flag.StringVar(~ 和 ~flag.IntVar(~
+   
+
+现在我们可以修改前面的示例以接受多个以逗号分隔的IP
+
+
+~type strList []string~ 为声明的新类型
+
+#+BEGIN_SRC go
+
+package main
+
+import (
+    "errors"
+    "flag"
+    "fmt"
+    "strings"
+    "sync"
+)
+
+// 1. Create a custom type from a string slice
+type strList []string
+
+// 2.1 implement String()
+func (str *strList) String() string {
+    return fmt.Sprintf("%v", *str)
+}
+
+// 2.2 implement Set(*strList)
+func (str *strList) Set(s string) error {
+    // If input was empty, return an error
+    if s == "" {
+        return errors.New("nil input")
+    }
+    // Split input by ","
+    *str = strings.Split(s, ",")
+    // Do not return an error
+    return nil
+}
+
+// Declare flag variables
+var (
+    ip      strList
+    port    strList
+    verbose bool
+)
+
+var wg sync.WaitGroup
+
+func init() {
+    // Declare flags
+    // Remember, flag methods return pointers
+    flag.Var(&ip, "ip", "target IP")
+
+    flag.Var(&port, "port", "Port")
+
+    flag.BoolVar(&verbose, "verbose", false, "verbosity")
+}
+
+// permutations creates all permutations of ip:port and sends them to a channel.
+// This is preferable to returing a []string because we can spawn it in a
+// goroutine and process items in the channel while it's running. Also save
+// memory by not creating a large []string that contains all permutations.
+func permutations(ips strList, ports strList, c chan<- string) {
+
+    // Close channel when done
+    defer close(c)
+    for _, i := range ips {
+        for _, p := range ports {
+            c <- fmt.Sprintf("%s:%s", i, p)
+        }
+    }
+}
+
+// hack spawns a goroutine that "hacks" each target.
+// Each goroutine prints a status and display progres if verbose is true
+func hack(target string, verbose bool) {
+
+    // Reduce waitgroups counter by one when hack finishes
+    defer wg.Done()
+    // Hack the planet!
+    fmt.Printf("Hacking %s!\n", target)
+
+    // Display progress if verbose flag is set
+    if verbose {
+        fmt.Printf("Pew pew!\n")
+    }
+}
+
+func main() {
+
+    // Parse flags
+    flag.Parse()
+
+    // Create channel for writing and reading IP:ports
+    c := make(chan string)
+
+    // Perform the permutation in a goroutine and send the results to a channel
+    // This way we can start "hacking" during permutation generation and
+    // not create a huge list of strings in memory
+    go permutations(ip, port, c)
+
+    for {
+        select {
+        // Read a string from channel
+        case t, ok := <-c:
+            // If channel is closed
+            if !ok {
+                // Wait until all goroutines are done
+                wg.Wait()
+                // Print hacking is finished and return
+                fmt.Println("Hacking finished!")
+                return
+            }
+            // Otherwise increase wg's counter by one
+            wg.Add(1)
+            // Spawn a goroutine to hack IP:port read from channel
+            go hack(t, verbose)
+        }
+    }
+}
+
+#+END_SRC
+
+
+运行结果
+
+#+BEGIN_SRC go
+$ go run 03.1-04-flag4.go -ip 10.20.30.40,50.60.70.80 -port 1234
+Hacking 50.60.70.80:1234!
+Hacking 10.20.30.40:1234!
+Hacking finished!
+
+$ go run 03.1-04-flag4.go -ip 10.20.30.40,50.60.70.80 -port 1234,4321 
+Hacking 10.20.30.40:4321!
+Hacking 10.20.30.40:1234!
+Hacking 50.60.70.80:4321!
+Hacking 50.60.70.80:1234!
+Hacking finished!
+
+$ go run 03.1-04-flag4.go -ip 10.20.30.40,50.60.70.80 -port 1234,4321 -verbose
+Hacking 10.20.30.40:4321!
+Pew pew!
+Hacking 50.60.70.80:4321!
+Pew pew!
+Hacking 10.20.30.40:1234!
+Pew pew!
+Hacking 50.60.70.80:1234!
+Pew pew!
+Hacking finished!
+
+#+END_SRC
+
+
+** 必要的flag 
+
+~flag~ 不支持声明参数为必要的，需要手动检查值，也可以通过 ~flag.NFlag()~ 判断flag数量 
+
+
+** 简短形式的flag
+
+#+BEGIN_SRC go
+
+flag.BoolVar(&verbose, "verbose", false, "verbosity")
+flag.BoolVar(&verbose, "v", false, "verbosity")
+
+#+END_SRC
+
+** 非 flag 声明的参数
+
+传入其它没有声明flag的参数，可以使用 ~flag.Args()~ 处理 或者 使用 ~flag.NArg()~ 和 ~flag.Arg(i)~
+
+#+BEGIN_SRC go
+
+// 03.1-05-args.go
+package main
+
+import (
+    "flag"
+    "fmt"
+)
+
+func main() {
+    // Set flag
+    _ = flag.Int("flag1", 0, "flag1 description")
+    // Parse all flags
+    flag.Parse()
+    // Enumererate flag.Args()
+    for _, v := range flag.Args() {
+        fmt.Println(v)
+    }
+    // Enumerate using flag.Arg(i)
+    for i := 0; i < flag.NArg(); i++ {
+        fmt.Println(flag.Arg(i))
+    }
+}
+
+#+END_SRC
+
+
+运行结果
+
+#+BEGIN_SRC
+$ go run 03.1-05-flag5.go -flag1 12 one two 3
+one
+two
+3
+one
+two
+3
+#+END_SRC
+  
+
+** 子命令 Subcommands
+
+使用 ~flag.NewFlagSet~ godoc: https://godoc.org/flag#NewFlagSet
+
+#+BEGIN_SRC go
+func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet
+#+END_SRC
+
+errorHandling 是参数处理错误后应该怎么处理
+
+#+BEGIN_SRC go
+const (
+    ContinueOnError ErrorHandling = iota // Return a descriptive error.
+    ExitOnError                          // Call os.Exit(2).
+    PanicOnError                         // Call panic with a descriptive error.
+)
+#+END_SRC
+
+
+示例
+
+#+BEGIN_SRC go
+// 03.1-06-subcommand.go
+package main
+
+import (
+    "flag"
+    "fmt"
+    "os"
+)
+
+var (
+    sub1 *flag.FlagSet
+    sub2 *flag.FlagSet
+
+    sub1flag  *int
+    sub2flag1 *string
+    sub2flag2 int
+
+    usage string
+)
+
+func init() {
+    // Declare subcommand sub1
+    sub1 = flag.NewFlagSet("sub1", flag.ExitOnError)
+    // int flag for sub1
+    sub1flag = sub1.Int("sub1flag", 0, "subcommand1 flag")
+
+    // Declare subcommand sub2
+    sub2 = flag.NewFlagSet("sub2", flag.ContinueOnError)
+    // string flag for sub2
+    sub2flag1 = sub2.String("sub2flag1", "", "subcommand2 flag1")
+    // int flag for sub2
+    sub2.IntVar(&sub2flag2, "sub2flag2", 0, "subcommand2 flag2")
+    // Create usage
+    usage = "sub1 -sub1flag (int)\nsub2 -sub2flag1 (string) -sub2flag2 (int)"
+}
+
+func main() {
+    // If subcommand is not provided, print error, usage and return
+    if len(os.Args) < 2 {
+        fmt.Println("Not enough parameters")
+        fmt.Println(usage)
+        return
+    }
+
+    // Check the sub command
+    switch os.Args[1] {
+
+    // Parse sub1
+    case "sub1":
+        sub1.Parse(os.Args[2:])
+
+    // Parse sub2
+    case "sub2":
+        sub2.Parse(os.Args[2:])
+
+    // If subcommand is -h or --help
+    case "-h":
+        fallthrough
+    case "--help":
+        fmt.Printf(usage)
+        return
+    default:
+        fmt.Printf("Invalid subcommand %v", os.Args[1])
+        return
+    }
+
+    // If sub1 was provided and parse, print the flags
+    if sub1.Parsed() {
+        fmt.Printf("subcommand1 with flag %v\n", *sub1flag)
+        return
+    }
+
+    // If sub2 was provided and parse, print the flags
+    if sub2.Parsed() {
+        fmt.Printf("subcommand2 with flags %v, %v\n", *sub2flag1, sub2flag2)
+        return
+    }
+}
+
+#+END_SRC
+
+
+** 其它的命令行处理包
+
+- https://github.com/spf13/cobra
+- https://github.com/urfave/cli
+- 

@@ -1,0 +1,11 @@
+#+EMAIL:  ldshuang@gmail.com
+#+TITLE: turbolinks
+
+* turbolinks notes
+
+** links
+
+- [[https://github.com/turbolinks/turbolinks#navigating-with-turbolinks][turbolinks/turbolinks: Turbolinks makes navigating your web application faster]]
+- [[https://developer.mozilla.org/en-US/docs/Web/API/History][History | MDN]]
+- [[https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest][XMLHttpRequest | MDN]]
+

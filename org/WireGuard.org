@@ -1,0 +1,10 @@
+#+EMAIL:  ldshuang@gmail.com
+#+TITLE: WireGuard Notes
+
+* install & config
+
+- [[https://www.wireguard.com/quickstart/][Quick Start - WireGuard]]
+- [[https://blog.mozcp.com/wireguard-usage/][WireGuard 配置和上网流量优化]]
+- [[https://www.linode.com/docs/networking/vpn/set-up-wireguard-vpn-on-ubuntu/][Set Up WireGuard VPN on Ubuntu]]
+- [[https://withdewhua.space/2018/11/10/wireguard/][WireGuard搭建和使用折腾小记]]
+

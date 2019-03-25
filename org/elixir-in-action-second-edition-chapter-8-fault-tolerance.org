@@ -1,0 +1,363 @@
+#+EMAIL:  ldshuang@gmail.com
+#+OPTIONS: html-style:nil
+#+TITLE: 8 Fault-tolerance basics 容错基础
+
+容错的目的是承认失败的存在，最小化它们的影响，并最终在没有人为干预的情况下恢复
+
+在一个足够复杂的系统中，许多事情可能会出错。偶尔会发生错误，依赖的组件可能会失败，并且可能会遇到硬件故障
+
+最后，如果系统是分布式的，则可能会遇到其他问题，例如远程计算机可能因崩溃或网络链接断开而不可用。
+
+* 8.1 Rrntime errors 运行时错误
+  
+一些运行时错误, 如 模式匹配错误, 无效的算术运算(例如除零),调用一个不存在的函数
+
+处理运行时错误 ~try-catch~
+
+** Error types 错误类型
+
+BEAM区分三种类型的运行时错误： ~errors~ ~exits~ ~throws~ 以下是一些典型的错误示例：
+
+#+BEGIN_SRC elixir
+iex(1)> 1/0
+ ** (ArithmeticError) bad argument in arithmetic expression
+
+iex(1)> Module.nonexistent_function()
+ ** (UndefinedFunctionError) function Module.nonexistent_function/0 is
+   undefined or private
+
+iex(1)> List.first({1,2,3})
+ ** (FunctionClauseError) no function clause matching in List.first/1
+#+END_SRC
+
+- 不可用的算术表达式
+- 调用不存在的函数
+- 模式匹配错误
+
+
+直接使用 ~raise/1~ 宏 抛出错误
+
+#+BEGIN_SRC elixir
+iex(1)> raise("Something went wrong")
+ ** (RuntimeError) Something went wrong
+#+END_SRC
+
+tips:
+
+以 ~!~ 结尾的函数, 比哪 ~File.open!~ 表示出错会 raise error, 这是Elixir的惯例用法
+
+#+BEGIN_SRC elixir
+iex(1)> File.open!("nonexistent_file")
+ ** (File.Error) could not open non_existing_file: no such file or directory
+#+END_SRC
+
+~File.open/1~ 有错误会返回错误信息, 不是抛出error
+
+#+BEGIN_SRC elixir
+iex(1)> File.open("nonexistent_file")
+{:error, :enoent}
+#+END_SRC
+
+在这段代码中没有运行时错误, File.open返回一个结果, 调用者可以以某种方式处理该结果
+
+~exit/1~
+
+要退出当前进程，可以调用exit/1，提供退出原因
+
+#+BEGIN_SRC elixir
+iex(2)> spawn(fn ->
+          exit("I'm done")
+          IO.puts("This doesn't happen")
+        end)
+#+END_SRC
+
+
+最后是 ~throw/1~
+
+Elixir程序有许多嵌套函数调用, 特别是, 实现循环的递归, 结果是没有诸如break, continue和return之类的结构
+在Elixir中，你可以抛出（throw）一个值稍后处理, throw 有点让人想起goto，你应该尽可能避免这种技术。
+
+#+BEGIN_SRC elixir
+iex(3)> throw(:thrown_value)
+ ** (throw) :thrown_value
+#+END_SRC
+
+另一个例子
+
+https://elixir-lang.org/getting-started/try-catch-and-rescue.html#throws
+
+#+BEGIN_SRC elixir
+iex> try do
+...>   Enum.each -50..50, fn(x) ->
+...>     if rem(x, 13) == 0, do: throw(x)
+...>   end
+...>   "Got nothing"
+...> catch
+...>   x -> "Got #{x}"
+...> end
+"Got -39"
+#+END_SRC
+
+** Handling errors
+
+使用 try 进行错误处理
+
+#+BEGIN_SRC elixir
+try do
+  ...
+catch error_type, error_value ->
+  ...
+end
+#+END_SRC
+
+
+执行 do block 有错误时执行 catch 
+
+注意catch中指定了两件事情 ~error_type~ ~error_value~
+
+~error_type~ 有 ~:error~, ~:exit~, or ~:throw~
+
+实验示例
+
+#+BEGIN_SRC elixir
+iex(1)> try_helper = fn fun ->
+          try do
+            fun.()
+            IO.puts("No error.")
+          catch type, value ->
+            IO.puts("Error\n  #{inspect(type)}\n  #{inspect(value)}")
+          end
+        end
+#+END_SRC
+
+接受函数参数 在 ~try~ 中调用函数 
+
+#+BEGIN_SRC elixir
+iex(2)> try_helper.(fn -> raise("Something went wrong") end)
+Error
+  :error
+  %RuntimeError{message: "Something went wrong"}
+#+END_SRC
+
+
+返回类型是 ~:error~ 错误是 ~RuntimeError~ 其中 message 是返回的错误信息
+
+返回原始的错误信息使用  ~:erlang.error/1~
+
+试下 ~throw~
+
+#+BEGIN_SRC elixir
+iex(3)> try_helper.(fn -> throw("Thrown value") end)
+Error
+  :throw
+  "Thrown value"
+#+END_SRC
+
+
+~exit/1~
+
+#+BEGIN_SRC elixir
+iex(4)> try_helper.(fn -> exit("I'm done") end)
+Error
+  :exit
+  "I'm done"
+#+END_SRC
+
+
+在elixir中 表达式都有返回值, ~try~ 返回值是最后执行的语句
+
+没有错误返回 ~do block~ 执行结果, 否则返回 ~catch~ 执行结果
+
+#+BEGIN_SRC elixir
+iex(5)> result =
+          try do
+            throw("Thrown value")
+          catch type, value -> {type, value}
+          end
+
+iex(6)> result
+{:throw, "Thrown value"}
+#+END_SRC
+
+
+~catch~ 是一个模式匹配, 可以指定多个子句
+
+#+BEGIN_SRC elixir
+try do
+  ...
+catch
+  type_pattern_1, error_value_1 ->
+    ...
+
+  type_pattern_2, error_value_2 ->
+    ...
+
+  ...
+end
+#+END_SRC
+
+
+使用 ~after~ 
+
+#+BEGIN_SRC elixir
+iex(7)> try do
+          raise("Something went wrong")
+        catch
+          _,_ -> IO.puts("Error caught"); 2
+        after
+          IO.puts("Cleanup code"); 1
+        end
+
+Error caught
+Cleanup code
+#+END_SRC
+
+
+~after~ block 总会被执行, *需要注意的是, after 并不会影响 try 表达式的返回结果*
+
+** links
+
+- [[https://hexdocs.pm/elixir/Kernel.html#defexception/1][Kernel – Elixir v1.6.4]]
+- [[https://hexdocs.pm/elixir/Kernel.SpecialForms.html#try/1][Kernel.SpecialForms – Elixir v1.6.4]]
+- [[https://elixir-lang.org/getting-started/try-catch-and-rescue.html][try, catch, and rescue - Elixir]]
+
+* 8.2 Errors in concurrent systems
+
+这是由于各个process的完全隔离和独立性, 一个process中的崩溃不会影响其他process（除非明确要求）
+
+#+BEGIN_SRC elixir
+iex(1)> spawn(fn ->
+          spawn(fn ->
+            Process.sleep(1000)
+            IO.puts("Process 2 finished")
+          end)
+
+          raise("Something went wrong")
+        end)
+#+END_SRC
+
+raise 异常只会影响第一个进程
+
+输出结果
+
+#+BEGIN_SRC 
+17:36:20.546 [error] Process #PID<0.94.0> raised an exception
+...
+Process 2 finished
+#+END_SRC
+
+
+进程间不共享内存, 一个进程崩溃不会影响另一个进程的内存
+
+** 8.2.1  Linking processes
+
+
+如果链接(link)了两个进程, 并且其中一个进程终止, 则另一个进程会收到退出信号(exit signal)
+
+退出信号包含崩溃进程的pid和退出原因
+
+正常终止的进程退出信号是 ~:normal~   
+
+默认情况下, 当进程从另一个进程接收到退出信号, 并且该信号不是 ~:normal~ 时, 链接进程也会终止
+
+进程link是双向的 
+
+~Process.link/1~ 当当前进程和另一个进程链接
+
+~spawn_link/1~ 启动新进程并链接它
+
+示例
+
+#+BEGIN_SRC elixir
+iex(1)> spawn(fn ->
+          spawn_link(fn ->
+            Process.sleep(1000)
+            IO.puts("Process 2 finished")
+          end)
+
+          raise("Something went wrong")
+        end)
+#+END_SRC
+
+输出
+
+#+BEGIN_SRC 
+17:36:20.546 [error] Process #PID<0.96.0> raised an exception
+#+END_SRC
+
+第二个进程没有正常输出
+
+
+一个进程可以链接到任意数量的其他进程
+
+进程链接有传递性
+
+
+**** Trapping exits
+
+
+捕获exit后, 退出信号以标准消息的形式放置在幸存进程的消息队列中, 使用函数 ~Process.flag(:trap_exit, true)~
+
+
+示例
+
+#+BEGIN_SRC elixir
+iex(1)> spawn(fn ->
+          Process.flag(:trap_exit, true)
+
+          spawn_link(fn -> raise("Something went wrong") end)
+
+          receive do
+            msg -> IO.inspect(msg)
+          end
+        end)
+#+END_SRC
+
+输出
+
+#+BEGIN_SRC 
+{:EXIT, #PID<0.93.0>,
+ {%RuntimeError{message: "Something went wrong"},
+  [{:erl_eval, :do_apply, 6, [file: 'erl_eval.erl', line: 668]}]}}
+#+END_SRC
+
+通用简化的格式是 ~{:EXIT, from_pid, exit_reason}~
+
+*** 8.2.2  Monitors 
+
+进程崩溃单向传播， 单向的观察另一些进程的终止
+
+~monitor_ref = Process.monitor(target_pid)~
+
+单个进程可以创建多个监视器(monitor), 不同的监视器通过引用(唯一性)区分
+
+当被监视的进程终止时, 监视这个进程的进程会收到 ~{:DOWN, monitor_ref, :process, from_pid, exit_reason}~ 消息
+
+停止监视 ~Process.demonitor(monitor_ref)~
+
+示例 
+
+#+BEGIN_SRC elixir
+iex(1)> target_pid = spawn(fn ->
+          Process.sleep(1000)
+        end)
+
+iex(2)> Process.monitor(target_pid)
+
+iex(3)> receive do
+          msg -> IO.inspect(msg)
+        end
+
+{:DOWN, #Reference<0.1398266903.3291480065.256365>, :process,
+  #PID<0.88.0>, :noproc}
+
+#+END_SRC
+
+
+监视器和链接之间有两个主要区别
+- 首先, 监视器是单向的  只有创建监视器的进程才会收到通知
+- 此外, 与链接不同, 观察者进程在受监视进程终止时不会崩溃, 而是收到一条消息, 可以处理或忽略该消息
+
+
+* 8.3  Supervisors
+
