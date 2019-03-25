@@ -2,14 +2,14 @@
 
 [https://github.com/lostisland/faraday](https://github.com/lostisland/faraday)
 
- ![DraggedImage](media/15535221058226/DraggedImage.png)
+ ![DraggedImage](http://dropshare.oss-cn-beijing.aliyuncs.com/1553525544.png)
 
 
 [https://ruby-china.org/topics/26060](https://ruby-china.org/topics/26060)
 
 支持开箱即用的adapter
 
- ![DraggedImage-1](media/15535221058226/DraggedImage-1.png)
+ ![DraggedImage-1](http://dropshare.oss-cn-beijing.aliyuncs.com/1553525567.png)
 
 
 第三方的adapter `Typhoeus`
