@@ -9,6 +9,7 @@
 
 - [deploy gitlab with sameersbn/docker-gitlab](deploy-gitlab-with-docker)
 - [deploy gollum notes](deploy-gollum-notes)
+- [Nginx](Nginx)
 
 # PostgreSQL
 
