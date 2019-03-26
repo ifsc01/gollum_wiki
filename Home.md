@@ -6,6 +6,10 @@
 - [Faraday Gem notes](Faraday-Gem-notes)
 - [ActiveRecord](ActiveRecord)
 
+## links
+- [Separating Rails Routes](https://mattboldt.com/separate-rails-route-files/)
+
+
 # ops
 
 - [deploy gitlab with sameersbn/docker-gitlab](deploy-gitlab-with-docker)
