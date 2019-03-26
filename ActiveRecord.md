@@ -1,0 +1,1 @@
+- [Single table inheritance](Single-table-inheritance)
