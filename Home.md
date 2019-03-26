@@ -4,7 +4,7 @@
 
 - [ActiveRecord’s queries tricks 小记](ActiveRecord-queries-tricks)
 - [Faraday Gem notes](Faraday-Gem-notes)
-
+- [ActiveRecord](ActiveRecord)
 # ops
 
 - [deploy gitlab with sameersbn/docker-gitlab](deploy-gitlab-with-docker)
