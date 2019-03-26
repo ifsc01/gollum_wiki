@@ -1,1 +1,1 @@
-- [Single table inheritance](Single-table-inheritance)
+- [Single table inheritance](Rails/Single-table-inheritance)
