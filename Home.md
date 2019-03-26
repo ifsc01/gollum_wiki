@@ -6,7 +6,8 @@
 - [Faraday Gem notes](Faraday-Gem-notes)
 - [ActiveRecord](ActiveRecord)
 
-## links
+### links
+
 - [Separating Rails Routes](https://mattboldt.com/separate-rails-route-files/)
 
 
