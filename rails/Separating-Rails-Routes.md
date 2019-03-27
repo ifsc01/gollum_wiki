@@ -1,5 +1,4 @@
-
-code example: 
+## code example from buledoc
 
 https://github.com/thebluedoc/bluedoc/blob/master/lib/bluedoc/action_dispatch/draw_route.rb
 
@@ -44,5 +43,8 @@ ActionDispatch::Routing::Mapper.prepend BlueDoc::ActionDispatch::DrawRoute
 
 ## links
 
-* https://mattboldt.com/separate-rails-route-files/
-* https://github.com/thebluedoc/bluedoc
+- [Separating Rails Routes](http://wiki.dsh.li/edit/rails/Separating-Rails-Routes)
+- [bluedoc/draw_route.rb at master · thebluedoc/bluedoc](https://github.com/thebluedoc/bluedoc/blob/master/lib/bluedoc/action_dispatch/draw_route.rb)
+- [bluedoc/action_dispatch_routing.rb at master · thebluedoc/bluedoc](https://github.com/thebluedoc/bluedoc/blob/master/config/initializers/action_dispatch_routing.rb)
+- [ActionDispatch::Routing::Mapper](https://api.rubyonrails.org/classes/ActionDispatch/Routing/Mapper.html)
+- [ActionDispatch::Routing::Mapper::Base](https://api.rubyonrails.org/v5.1.4/classes/ActionDispatch/Routing/Mapper/Base.html)
