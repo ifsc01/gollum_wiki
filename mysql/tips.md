@@ -6,6 +6,13 @@ change table collate
 alter table admins convert to character set utf8mb4 collate utf8mb4_unicode_ci;
 ```
 
+database
+
+```
+ALTER DATABASE laiwang_staging CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+```
+
 links
 
 - [mysql大小写敏感与校对规则 - 天士梦 - 博客园](https://www.cnblogs.com/cchust/p/3952821.html)
