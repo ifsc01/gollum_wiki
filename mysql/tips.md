@@ -13,6 +13,13 @@ ALTER DATABASE laiwang_staging CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode
 
 ```
 
+column 
+
+```
+ALTER TABLE `laiwang_staging`.`admins` 
+CHANGE COLUMN `username` `username` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' NULL DEFAULT NULL ;
+```
+
 links
 
 - [mysql大小写敏感与校对规则 - 天士梦 - 博客园](https://www.cnblogs.com/cchust/p/3952821.html)
