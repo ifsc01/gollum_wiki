@@ -3,7 +3,7 @@
 # Ruby & Rails 
 
 - [ActiveRecord’s queries tricks 小记](ActiveRecord-queries-tricks)
-- [Faraday Gem notes](Faraday-Gem-notes)
+- [Faraday Gem notes](rails/Faraday-Gem-notes)
 - [ActiveRecord](ActiveRecord)
 
 ### links
