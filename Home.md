@@ -19,5 +19,4 @@
 
 # PostgreSQL
 
-- [PostgreSQL 5.7. Schemas 笔记
-](pg-schema)
+- [PostgreSQL 5.7. Schemas 笔记](PostgreSQL-Schema-Notes)
