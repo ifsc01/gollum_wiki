@@ -5,6 +5,7 @@
 - [ActiveRecord’s queries tricks 小记](ActiveRecord-queries-tricks)
 - [Faraday Gem notes](rails/Faraday-Gem-notes)
 - [ActiveRecord](ActiveRecord)
+- [rvm][rails/rvm]
 
 ### links
 
