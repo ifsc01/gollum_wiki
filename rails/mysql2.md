@@ -1,5 +1,6 @@
 
-fix 
+fix Failed to build gem native extension
+
 ```
 Gem::Ext::BuildError: ERROR: Failed to build gem native extension.
 
