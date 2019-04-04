@@ -8,9 +8,12 @@ ALTER TABLE admins CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 database
 
-```
-ALTER DATABASE laiwang_staging CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+
+## utf8mb4
+
+```
+CREATE SCHEMA `laiwang_dev` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ;
 ```
 
 column 
