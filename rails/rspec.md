@@ -1,4 +1,5 @@
-# rspec `raise_error`_ 
+## rspec `raise_error`
+
 [https://relishapp.com/rspec/rspec-expectations/docs/built-in-matchers/raise-error-matcher](https://relishapp.com/rspec/rspec-expectations/docs/built-in-matchers/raise-error-matcher)
 
 > Use the raise_error matcher to specify that a block of code raises an error. The most_
