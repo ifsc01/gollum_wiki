@@ -61,7 +61,7 @@ GEM
       rubypants (~> 0.2)
     posix-spawn (0.3.13)
     puma (3.12.1)
-    rack (1.6.11)
+    rack (1.6.12)
     rack-protection (1.5.5)
       rack
     rouge (2.2.1)
