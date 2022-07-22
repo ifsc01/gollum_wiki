@@ -78,7 +78,7 @@ GEM
     tilt (2.0.9)
     twitter-text (1.14.7)
       unf (~> 0.1.0)
-    tzinfo (1.2.5)
+    tzinfo (1.2.10)
       thread_safe (~> 0.1)
     unf (0.1.4)
       unf_ext
